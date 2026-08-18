@@ -1,0 +1,44 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Yonkers WaterWise",
+        "description": "Sign in with the same email and password you use at mywateraccount.yonkersny.gov.",
+        "data": {
+          "username": "Email",
+          "password": "Password"
+        }
+      },
+      "account": {
+        "title": "Choose an account",
+        "description": "This login has access to more than one water account. Pick the one to import. Add the integration again to track the others.",
+        "data": {
+          "account_number": "Account"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Re-enter your password",
+        "description": "The WaterWise portal rejected the stored password for {username}.",
+        "data": {
+          "password": "Password"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Could not reach the WaterWise portal.",
+      "invalid_auth": "The portal rejected that email and password.",
+      "unknown": "Unexpected error. Check the Home Assistant log for details."
+    },
+    "abort": {
+      "already_configured": "That water account is already set up.",
+      "reauth_successful": "Re-authentication was successful."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "last_reading": {
+        "name": "Last reading"
+      }
+    }
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "domain": "yonkers_waterwise",
+  "name": "Yonkers WaterWise",
+  "codeowners": [],
+  "config_flow": true,
+  "dependencies": ["recorder"],
+  "documentation": "https://github.com/Safrone/yonkers_water_wise",
+  "integration_type": "service",
+  "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/Safrone/yonkers_water_wise/issues",
+  "requirements": [],
+  "version": "0.1.0"
+}
