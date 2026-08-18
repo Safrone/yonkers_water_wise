@@ -36,6 +36,12 @@
   },
   "entity": {
     "sensor": {
+      "total_usage": {
+        "name": "Total usage"
+      },
+      "last_interval_usage": {
+        "name": "Last hourly usage"
+      },
       "last_reading": {
         "name": "Last reading"
       }

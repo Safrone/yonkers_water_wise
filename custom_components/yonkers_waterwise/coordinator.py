@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime, timedelta
 from functools import partial
 from zoneinfo import ZoneInfo
@@ -57,6 +57,8 @@ class UsageSnapshot:
 
     last_reading_start: datetime | None
     last_reading_value: float | None
+    total: float | None
+    """Cumulative usage since the earliest reading the portal holds."""
     imported: int
     adjusted: int
 
@@ -109,6 +111,17 @@ class YonkersWaterWiseCoordinator(DataUpdateCoordinator[UsageSnapshot]):
         except CannotConnect as err:
             raise UpdateFailed(str(err)) from err
 
+    def _unchanged(self) -> UsageSnapshot:
+        """Return the previous snapshot, with this run's counters zeroed.
+
+        The portal lags about a day, so most refreshes legitimately find
+        nothing new. Blanking the sensors on those runs would make them flicker
+        to unknown, so the last known values are carried forward instead.
+        """
+        if self.data is not None:
+            return replace(self.data, imported=0, adjusted=0)
+        return UsageSnapshot(None, None, None, 0, 0)
+
     async def _async_sync_statistics(self) -> UsageSnapshot:
         """Work out the window to fetch, fetch it, and import the result."""
         window_start, baseline = await self._async_resolve_window()
@@ -118,12 +131,12 @@ class YonkersWaterWiseCoordinator(DataUpdateCoordinator[UsageSnapshot]):
             _LOGGER.debug(
                 "Statistics for meter %s are already current", self.meter_number
             )
-            return UsageSnapshot(None, None, 0, 0)
+            return self._unchanged()
 
         readings = await self._async_fetch_range(window_start, now)
         if not readings:
             _LOGGER.debug("Portal returned no readings for meter %s", self.meter_number)
-            return UsageSnapshot(None, None, 0, 0)
+            return self._unchanged()
 
         readings = normalize_readings(readings)
 
@@ -144,7 +157,7 @@ class YonkersWaterWiseCoordinator(DataUpdateCoordinator[UsageSnapshot]):
             )
 
         if not statistics:
-            return UsageSnapshot(None, None, 0, 0)
+            return self._unchanged()
 
         async_add_external_statistics(self.hass, self._metadata, statistics)
 
@@ -160,6 +173,7 @@ class YonkersWaterWiseCoordinator(DataUpdateCoordinator[UsageSnapshot]):
         return UsageSnapshot(
             last_reading_start=readings[-1].start,
             last_reading_value=readings[-1].value,
+            total=running,
             imported=len(statistics),
             adjusted=adjusted,
         )

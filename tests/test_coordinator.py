@@ -231,3 +231,51 @@ async def test_no_readings_is_not_a_failure(
 
     assert coordinator.last_update_success
     assert await _read_back(hass) == []
+
+
+async def test_snapshot_carries_the_cumulative_total(
+    recorder_mock: Recorder, hass: HomeAssistant
+) -> None:
+    """The total sensor reads from the same running sum written to statistics."""
+    values = [0.1, 0.2, 0.3]
+    readings = [
+        IntervalReading(SERIES_START + timedelta(hours=i), v, False)
+        for i, v in enumerate(values)
+    ]
+    coordinator = _coordinator(hass, _make_client(readings))
+    await coordinator.async_refresh()
+
+    assert coordinator.data.total == pytest.approx(sum(values))
+    assert coordinator.data.last_reading_value == pytest.approx(values[-1])
+    assert coordinator.data.last_reading_start == readings[-1].start
+
+    rows = await _read_back(hass)
+    assert rows[-1]["sum"] == pytest.approx(coordinator.data.total)
+
+
+async def test_refresh_with_no_new_readings_keeps_the_last_values(
+    recorder_mock: Recorder, hass: HomeAssistant
+) -> None:
+    """Sensors must not blank out on the many refreshes that find nothing.
+
+    The portal lags about a day while the coordinator polls every three hours,
+    so most runs return no new data. Those runs have to carry the previous
+    snapshot forward rather than reporting None.
+    """
+    readings = _readings(5, value=0.2)
+    coordinator = _coordinator(hass, _make_client(readings))
+    await coordinator.async_refresh()
+    before = coordinator.data
+
+    # The portal has published nothing since.
+    coordinator.client = _make_client([])
+    await coordinator.async_refresh()
+    after = coordinator.data
+
+    assert coordinator.last_update_success
+    assert after.total == pytest.approx(before.total)
+    assert after.last_reading_start == before.last_reading_start
+    assert after.last_reading_value == pytest.approx(before.last_reading_value)
+    # ...but this run genuinely imported nothing, and says so.
+    assert after.imported == 0
+    assert after.adjusted == 0
