@@ -123,10 +123,29 @@ them, and warns if an off-hour timestamp comes back anyway.
 
 ## Logo
 
-Home Assistant serves integration logos from
-[home-assistant/brands](https://github.com/home-assistant/brands), not from the
-integration, so the UI shows a placeholder until the artwork is merged there.
-Prepared assets and submission instructions are in [`brands/`](brands/).
+The artwork lives in `custom_components/yonkers_waterwise/brand/` and is served
+by Home Assistant's [brands proxy
+API](https://developers.home-assistant.io/blog/2026/02/24/brands-proxy-api/).
+Local brand images take priority over the brands CDN and need no manifest keys
+and no pull request, so the logo appears as soon as the integration is
+installed. This requires Home Assistant 2026.3 or newer; on older versions the
+files are simply ignored and the UI falls back to a placeholder.
+
+`icon.png` (256²) is the WaterWise owl on its own; `logo.png` (980×256) is the
+full lockup with the wordmark, plus `@2x` variants of each. All are trimmed
+RGBA. No `dark_` variants are supplied because the light-blue mark holds up on
+dark backgrounds.
+
+The images derive from the City of Yonkers WaterWise logo, published by the
+city at `https://www.yonkersny.gov/ImageRepository/Document?documentId=15647`.
+The icon was cut from it by connected-component analysis of the alpha channel
+rather than by cropping — the "Y" of YONKERS overlaps the owl's brow
+horizontally, so no straight cut separates them — keeping the brow, the face
+and beak, and the two eyes.
+
+This is a municipal logo belonging to the City of Yonkers, used here to
+identify the utility the integration talks to. The integration is not
+affiliated with or endorsed by the city.
 
 ## Development
 
