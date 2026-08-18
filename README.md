@@ -83,11 +83,10 @@ which is the quickest way to tell a credential problem from an integration
 problem:
 
 ```bash
-pip install -r requirements-dev.txt
 export YWW_USERNAME='you@example.com'
 export YWW_PASSWORD='...'
-python3 scripts/fetch_usage.py --days 3
-python3 scripts/fetch_usage.py --days 30 --csv usage.csv
+uv run python scripts/fetch_usage.py --days 3
+uv run python scripts/fetch_usage.py --days 30 --csv usage.csv
 ```
 
 To see what the integration is doing, add to `configuration.yaml`:
@@ -129,12 +128,28 @@ Home Assistant serves integration logos from
 integration, so the UI shows a placeholder until the artwork is merged there.
 Prepared assets and submission instructions are in [`brands/`](brands/).
 
-## Tests
+## Development
+
+The project is managed with [uv](https://docs.astral.sh/uv/). It installs the
+right Python version itself, so no interpreter setup is needed:
 
 ```bash
-pip install -r requirements-dev.txt
-pytest
+uv sync          # create .venv and install everything
+uv run pytest    # run the tests
+uv run ruff check .
+uv run ruff format .
 ```
+
+There are two dependency groups. `dev` is small — enough for the API tests and
+`scripts/fetch_usage.py`. `ha` adds `pytest-homeassistant-custom-component`,
+which pulls in Home Assistant itself so the coordinator can be tested against a
+real recorder database. Both are installed by default; use
+`uv sync --only-group dev` to skip the heavy one.
+
+`pytest-homeassistant-custom-component` is pinned because each of its releases
+tracks exactly one Home Assistant version — currently 2026.8.2. Bump it in step
+with the Home Assistant you actually run, or the tests will exercise a different
+version of the recorder APIs than your install uses.
 
 ## Disclaimer
 

@@ -1,21 +1,17 @@
-"""Make the integration's Home Assistant-independent modules importable.
+"""Shared test configuration.
 
-`custom_components/yonkers_waterwise/__init__.py` pulls in Home Assistant, which
-is not a test dependency here. Bind the package directory to a private name so
-`api.py` and `const.py` can be imported on their own, relative imports included.
+Tests import the integration through its real package path,
+`custom_components.yonkers_waterwise`, which pytest resolves because
+`pythonpath = ["."]` puts the repository root on `sys.path`.
+
+pytest-homeassistant-custom-component registers itself as an entry-point
+plugin, so it must not be listed in `pytest_plugins` as well.
+
+Note there is deliberately no autouse `enable_custom_integrations` fixture here.
+That fixture depends on `hass`, and requesting `hass` before `recorder_mock`
+makes the recorder fixture assert. Tests that need Home Assistant to load the
+integration from `custom_components/` should request it explicitly, after
+`recorder_mock`.
 """
 
 from __future__ import annotations
-
-import sys
-import types
-from pathlib import Path
-
-_PKG_DIR = (
-    Path(__file__).resolve().parent.parent / "custom_components" / "yonkers_waterwise"
-)
-
-if "_yww" not in sys.modules:
-    _pkg = types.ModuleType("_yww")
-    _pkg.__path__ = [str(_PKG_DIR)]
-    sys.modules["_yww"] = _pkg

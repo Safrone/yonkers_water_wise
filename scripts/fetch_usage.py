@@ -4,11 +4,14 @@
 Useful for checking credentials, seeing what the portal actually returns, and
 confirming a change to api.py before reloading the integration.
 
-    pip install aiohttp yarl
     export YWW_USERNAME='you@example.com'
     export YWW_PASSWORD='...'
-    python3 scripts/fetch_usage.py --days 3
-    python3 scripts/fetch_usage.py --days 30 --csv usage.csv
+    uv run python scripts/fetch_usage.py --days 3
+    uv run python scripts/fetch_usage.py --days 30 --csv usage.csv
+
+Only the light `dev` dependency group is needed, so
+`uv sync --only-group dev` is enough if you do not want the Home Assistant
+test harness installed.
 """
 
 from __future__ import annotations
@@ -40,8 +43,8 @@ const = importlib.import_module("_yww.const")
 api = importlib.import_module("_yww.api")
 
 
-async def main() -> int:
-    """Log in, enumerate meters, and dump recent hourly usage."""
+def parse_args() -> argparse.Namespace:
+    """Parse the command line."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--days", type=int, default=3, help="how many days back to fetch (default: 3)"
@@ -49,11 +52,22 @@ async def main() -> int:
     parser.add_argument("--account", help="account number (default: first found)")
     parser.add_argument("--meter", help="meter number (default: first found)")
     parser.add_argument("--csv", help="also write the readings to this CSV file")
-    args = parser.parse_args()
+    return parser.parse_args()
 
+
+def read_credentials() -> tuple[str, str]:
+    """Take credentials from the environment, prompting for whatever is missing.
+
+    Kept out of the coroutine below: prompting blocks, and blocking inside an
+    event loop is exactly the habit this project should not model.
+    """
     username = os.environ.get("YWW_USERNAME") or input("Email: ").strip()
     password = os.environ.get("YWW_PASSWORD") or getpass.getpass("Password: ")
+    return username, password
 
+
+async def main(args: argparse.Namespace, username: str, password: str) -> int:
+    """Log in, enumerate meters, and dump recent hourly usage."""
     tz = ZoneInfo(const.UTILITY_TIMEZONE)
 
     async with aiohttp.ClientSession() as session:
@@ -83,9 +97,8 @@ async def main() -> int:
 
         end = datetime.now(tz)
         start = end - timedelta(days=args.days)
-        print(
-            f"\nFetching hourly usage {start:%Y-%m-%d %H:%M} -> {end:%Y-%m-%d %H:%M} ..."
-        )
+        print(f"\nFetching hourly usage {start:%Y-%m-%d %H:%M}", end="")
+        print(f" -> {end:%Y-%m-%d %H:%M} ...")
         readings = await client.async_get_hourly_usage(
             account_number, meter_number, start, end
         )
@@ -124,4 +137,4 @@ async def main() -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(asyncio.run(main()))
+    raise SystemExit(asyncio.run(main(parse_args(), *read_credentials())))

@@ -72,7 +72,7 @@ class YonkersWaterWiseConfigFlow(ConfigFlow, domain=DOMAIN):
                 errors["base"] = "invalid_auth"
             except CannotConnect:
                 errors["base"] = "cannot_connect"
-            except Exception:  # noqa: BLE001
+            except Exception:
                 _LOGGER.exception("Unexpected error connecting to the WaterWise portal")
                 errors["base"] = "unknown"
             else:
@@ -149,7 +149,7 @@ class YonkersWaterWiseConfigFlow(ConfigFlow, domain=DOMAIN):
                 errors["base"] = "invalid_auth"
             except CannotConnect:
                 errors["base"] = "cannot_connect"
-            except Exception:  # noqa: BLE001
+            except Exception:
                 _LOGGER.exception("Unexpected error during reauthentication")
                 errors["base"] = "unknown"
             else:

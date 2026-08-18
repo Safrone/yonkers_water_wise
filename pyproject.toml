@@ -1,0 +1,47 @@
+[project]
+name = "yonkers-waterwise"
+version = "0.1.0"
+description = "Home Assistant integration for City of Yonkers WaterWise water meter data"
+readme = "README.md"
+requires-python = ">=3.14.2"
+# The integration declares no runtime requirements: it ships into Home
+# Assistant, which already provides aiohttp. Everything below is tooling.
+dependencies = []
+
+[dependency-groups]
+# Enough to run the unit tests and scripts/fetch_usage.py.
+dev = [
+    "aiohttp",
+    "yarl",
+    "pytest",
+    "ruff",
+]
+# The Home Assistant test harness. Pinned deliberately: each release tracks one
+# Home Assistant version, and 0.13.356 matches HA 2026.8.2. Bump it in step with
+# the Home Assistant version you actually run.
+ha = [
+    "pytest-homeassistant-custom-component==0.13.356",
+]
+
+[tool.uv]
+# This repository is a Home Assistant custom component, not an installable
+# distribution, so there is nothing to build.
+package = false
+default-groups = ["dev", "ha"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+# Make `custom_components.yonkers_waterwise` importable from the repo root.
+pythonpath = ["."]
+
+[tool.ruff]
+target-version = "py314"
+
+[tool.ruff.lint]
+# ASYNC and BLE are enabled to match Home Assistant's own lint config, so the
+# `noqa` directives written against those rules stay meaningful.
+select = ["E", "F", "W", "I", "UP", "B", "SIM", "RUF", "ASYNC", "BLE"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101"]

@@ -6,7 +6,8 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 
 import pytest
-from _yww.api import (
+
+from custom_components.yonkers_waterwise.api import (
     CannotConnect,
     IntervalReading,
     _extract_json_array,
