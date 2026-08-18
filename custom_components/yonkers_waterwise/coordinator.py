@@ -9,7 +9,11 @@ from functools import partial
 from zoneinfo import ZoneInfo
 
 from homeassistant.components.recorder import get_instance
-from homeassistant.components.recorder.models import StatisticData, StatisticMetaData
+from homeassistant.components.recorder.models import (
+    StatisticData,
+    StatisticMeanType,
+    StatisticMetaData,
+)
 from homeassistant.components.recorder.statistics import (
     async_add_external_statistics,
     get_last_statistics,
@@ -21,6 +25,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from homeassistant.util import dt as dt_util
+from homeassistant.util.unit_conversion import VolumeConverter
 
 from .api import (
     CannotConnect,
@@ -82,11 +87,15 @@ class YonkersWaterWiseCoordinator(DataUpdateCoordinator[UsageSnapshot]):
 
         self.statistic_id = f"{DOMAIN}:water_{meter_number}"
         self._metadata = StatisticMetaData(
-            has_mean=False,
+            # A water total has no meaningful average, only a running sum.
+            mean_type=StatisticMeanType.NONE,
             has_sum=True,
             name=f"Water usage {meter_number}",
             source=DOMAIN,
             statistic_id=self.statistic_id,
+            # Tells the recorder which converter to use if the user displays
+            # these statistics in a different volume unit.
+            unit_class=VolumeConverter.UNIT_CLASS,
             unit_of_measurement=UnitOfVolume.CENTUM_CUBIC_FEET,
         )
 

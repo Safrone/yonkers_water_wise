@@ -16,6 +16,13 @@ happened instead of the time it was fetched.
 Each meter also gets one diagnostic `Last reading` sensor so you can see how
 current the import is.
 
+## Requirements
+
+Home Assistant 2025.11 or newer, which is when the recorder began requiring
+`mean_type` and `unit_class` on statistics metadata. The logo additionally
+needs 2026.3 (see [Logo](#logo) below), but degrades to a placeholder rather
+than failing on older versions.
+
 ## Installation
 
 **HACS:** add this repository as a custom repository of type *Integration*,

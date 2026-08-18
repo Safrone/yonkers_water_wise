@@ -14,12 +14,14 @@ from zoneinfo import ZoneInfo
 
 import pytest
 from homeassistant.components.recorder import Recorder, get_instance
+from homeassistant.components.recorder.models import StatisticMeanType
 from homeassistant.components.recorder.statistics import (
     get_metadata,
     statistics_during_period,
 )
 from homeassistant.const import UnitOfVolume
 from homeassistant.core import HomeAssistant
+from homeassistant.util.unit_conversion import VolumeConverter
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 from pytest_homeassistant_custom_component.components.recorder.common import (
     async_wait_recording_done,
@@ -139,8 +141,33 @@ async def test_metadata_is_registered_for_the_energy_dashboard(
     _, meta = metadata[STATISTIC_ID]
     assert meta["source"] == DOMAIN
     assert meta["has_sum"] is True
-    assert meta["has_mean"] is False
+    assert meta["mean_type"] is StatisticMeanType.NONE
     assert meta["unit_of_measurement"] == UnitOfVolume.CENTUM_CUBIC_FEET
+    # Lets the recorder convert to other volume units on display.
+    assert meta["unit_class"] == VolumeConverter.UNIT_CLASS
+
+
+async def test_statistics_metadata_is_not_deprecated(
+    recorder_mock: Recorder, hass: HomeAssistant, caplog: pytest.LogCaptureFixture
+) -> None:
+    """Metadata must carry every field the recorder currently expects.
+
+    Home Assistant reports missing `mean_type`/`unit_class` through
+    homeassistant.helpers.frame rather than raising, so an incomplete metadata
+    dict keeps working until the version it is scheduled to break in. Assert on
+    the warning so the next such deprecation fails here instead of in the log
+    of somebody's live install.
+    """
+    coordinator = _coordinator(hass, _make_client(_readings(3)))
+    await coordinator.async_refresh()
+    await async_wait_recording_done(hass)
+
+    offending = [
+        record.getMessage()
+        for record in caplog.records
+        if "doesn't specify" in record.getMessage()
+    ]
+    assert not offending, f"deprecated statistics metadata: {offending}"
 
 
 async def test_second_refresh_resumes_the_running_total(
