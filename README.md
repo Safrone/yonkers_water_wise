@@ -122,6 +122,13 @@ hourly buckets outward from whatever `start_date` you pass, so asking for
 keyed by the hour they start, so the client floors both bounds before sending
 them, and warns if an off-hour timestamp comes back anyway.
 
+## Logo
+
+Home Assistant serves integration logos from
+[home-assistant/brands](https://github.com/home-assistant/brands), not from the
+integration, so the UI shows a placeholder until the artwork is merged there.
+Prepared assets and submission instructions are in [`brands/`](brands/).
+
 ## Tests
 
 ```bash
