@@ -43,6 +43,56 @@ and pick **Water usage &lt;meter number&gt;**.
 Usage is reported in **CCF** (hundred cubic feet), the unit the city bills in.
 One CCF is 748.05 US gallons.
 
+Note that the Energy dashboard drops to daily bars as soon as you select more
+than two days. That threshold is hardcoded in the Home Assistant frontend
+(`getSuggestedPeriod` in `src/data/energy.ts`) and is not configurable.
+
+## Entities
+
+Each meter gets three sensors. Usage itself is written to long-term statistics,
+which is what the Energy dashboard reads; these entities exist so the same
+figures are visible on the device page and usable in automations.
+
+| Entity | Meaning |
+| --- | --- |
+| `Total usage` | Cumulative CCF since the earliest reading the portal holds |
+| `Last hourly usage` | The most recent hourly bucket |
+| `Last reading` | Timestamp of that bucket (diagnostic) |
+
+`Total usage` carries the state class `total`, not `total_increasing`: the
+utility restates recent hours as late reads arrive, and a downward correction
+would otherwise be read as a meter reset.
+
+There is deliberately no "usage today" sensor. Readings run about a day behind,
+so it would sit at zero for most of the day and imply no water was used. For
+per-day figures, put a
+[utility meter](https://www.home-assistant.io/integrations/utility_meter/)
+helper on `Total usage` with a daily cycle — that tracks the corrections
+properly too.
+
+## Charting hourly usage
+
+To see hourly bars over a longer window than the Energy dashboard allows, use a
+statistics graph card on any dashboard:
+
+```yaml
+type: statistics-graph
+title: Water usage (hourly)
+entities:
+  - yonkers_waterwise:water_<meter number>
+stat_types:
+  - change
+period: hour
+days_to_show: 7
+chart_type: bar
+```
+
+`stat_types: change` is the important part — the statistic stores a cumulative
+sum, and `change` renders the per-period delta so each bar is that hour's usage.
+Hourly long-term statistics are never purged, so `days_to_show` can go back as
+far as the import reaches. Leave `energy_date_selection` off, or the card
+re-inherits the same automatic period selection.
+
 ## Things worth knowing
 
 **Readings run about a day behind.** The portal is typically ~24 hours behind
